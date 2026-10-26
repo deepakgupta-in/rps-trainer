@@ -255,13 +255,14 @@ function pick(t){
   state.answers++;
 
   const g = grade(t, state.target);
+  const cls = g === 'tie' ? 'bad' : g; // ties grade red: only the beater is green
   const want = correctAnswer(state.target);
   const opp = THROWS[Math.floor(Math.random()*3)];
   const out = roundOutcome(t, opp);
   const prevTarget = state.target;
 
   const btn = document.querySelector('.choice[data-throw="'+t+'"]');
-  btn.classList.add(g);
+  btn.classList.add(cls);
   document.querySelectorAll('.choice').forEach(b => b.disabled = true);
 
   let head, sub;
@@ -273,7 +274,7 @@ function pick(t){
     state.streak = 0;
     head = '🟰 ' + NAME[t] + ' only ties ' + NAME[prevTarget];
     sub = 'You need the throw that beats it: ' + EMOJI[want] + ' ' + NAME[want];
-    sndTie();
+    sndBad();
   } else {
     state.streak = 0;
     head = prevTarget === null
@@ -288,7 +289,7 @@ function pick(t){
     : out === 'win'
       ? 'Opponent threw ' + EMOJI[opp] + ' — you won the round!'
       : 'Opponent threw ' + EMOJI[opp] + ' — they took that one.';
-  setBanner(g, head + '<small>' + (sub ? sub + '<br>' : '') + outMsg + ' ⚡ ' + (rt/1000).toFixed(1) + 's</small>');
+  setBanner(cls, head + '<small>' + (sub ? sub + '<br>' : '') + outMsg + ' ⚡ ' + (rt/1000).toFixed(1) + 's</small>');
 
   // milestone
   const m = $('milestone');
@@ -316,7 +317,7 @@ function pick(t){
   state.round++;
 
   setTimeout(() => {
-    btn.classList.remove(g);
+    btn.classList.remove(cls);
     document.querySelectorAll('.choice').forEach(b => b.disabled = false);
     renderScenario();
     setBanner('', 'Tap the throw that beats the last winner.<small class="kbd">Keyboard: R / P / S</small>');
