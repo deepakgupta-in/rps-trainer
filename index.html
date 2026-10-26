@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0f1220">
+<title>Beat the Winner · RPS Reflex Trainer</title>
+<style>
+  :root{
+    --bg:#0f1220; --card:#1a1f33; --card2:#232a44; --ink:#eef1ff; --dim:#9aa3c7;
+    --green:#2dd4a7; --red:#ff5d6c; --amber:#ffb84d; --accent:#7c9bff;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(1200px 800px at 50% -10%, #1c2340 0%, var(--bg) 60%);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100%; display:flex; flex-direction:column; align-items:center;
+    touch-action:manipulation; overscroll-behavior:none; user-select:none;
+  }
+  .wrap{width:100%; max-width:480px; padding:14px 16px 40px; display:flex; flex-direction:column; gap:14px}
+  header{display:flex; align-items:center; justify-content:space-between}
+  h1{font-size:19px; font-weight:800; letter-spacing:.3px}
+  h1 .sub{color:var(--dim); font-weight:600; font-size:12px; display:block; margin-top:2px}
+  .iconbtn{background:var(--card); border:1px solid #ffffff14; color:var(--ink); border-radius:12px;
+    padding:8px 10px; font-size:16px; cursor:pointer}
+  .stats{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
+  .stat{background:var(--card); border:1px solid #ffffff10; border-radius:14px; padding:8px 4px; text-align:center}
+  .stat .v{font-size:18px; font-weight:800}
+  .stat .k{font-size:10px; color:var(--dim); text-transform:uppercase; letter-spacing:.6px; margin-top:2px}
+  .card{background:var(--card); border:1px solid #ffffff12; border-radius:22px; padding:22px 18px;
+    text-align:center; box-shadow:0 18px 50px -20px #000a}
+  .roundnum{font-size:11px; color:var(--dim); letter-spacing:1.5px; text-transform:uppercase}
+  .recap{margin-top:10px; font-size:14px; color:var(--dim); min-height:20px}
+  .recap b{color:var(--ink)}
+  .winner-emoji{font-size:88px; line-height:1.15; margin-top:6px;
+    filter:drop-shadow(0 10px 24px #0008); animation:pop .35s cubic-bezier(.2,1.6,.4,1)}
+  .winner-label{font-size:21px; font-weight:800; margin-top:4px}
+  .prompt{margin-top:10px; font-size:15px; color:var(--accent); font-weight:700}
+  @keyframes pop{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+  .choices{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+  .choice{background:var(--card2); border:2px solid #ffffff14; border-radius:20px; padding:16px 6px 12px;
+    display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer;
+    transition:transform .08s ease, border-color .15s, background .15s; font-size:40px}
+  .choice span{font-size:12px; font-weight:700; color:var(--dim); letter-spacing:.5px}
+  .choice:active{transform:scale(.93)}
+  .choice.kbd-hint span::after{content:""}
+  .choice.good{background:#2dd4a722; border-color:var(--green); box-shadow:0 0 24px #2dd4a755}
+  .choice.bad{background:#ff5d6c22; border-color:var(--red); box-shadow:0 0 24px #ff5d6c44; animation:shake .3s}
+  .choice.tie{background:#ffb84d22; border-color:var(--amber); box-shadow:0 0 24px #ffb84d44}
+  .choice:disabled{cursor:default}
+  .choice:disabled:not(.good):not(.bad):not(.tie){opacity:.55}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .banner{border-radius:16px; padding:13px 16px; font-size:15px; font-weight:700; text-align:center;
+    min-height:48px; display:flex; align-items:center; justify-content:center; line-height:1.35;
+    background:var(--card); border:1px solid #ffffff10; color:var(--dim); transition:all .15s}
+  .banner.good{background:#2dd4a71e; border-color:#2dd4a766; color:var(--green)}
+  .banner.bad{background:#ff5d6c1e; border-color:#ff5d6c66; color:var(--red)}
+  .banner.tie{background:#ffb84d1e; border-color:#ffb84d66; color:var(--amber)}
+  .banner small{display:block; font-weight:600; color:var(--dim); font-size:12.5px; margin-top:2px}
+  .milestone{text-align:center; font-size:14px; font-weight:800; color:var(--amber); min-height:20px}
+  .howto{background:var(--card); border:1px solid #ffffff10; border-radius:18px; padding:16px 18px; font-size:14px; color:var(--dim); line-height:1.55}
+  .howto h2{font-size:14px; color:var(--ink); margin-bottom:8px}
+  .howto .loop{display:flex; align-items:center; justify-content:center; gap:6px; font-size:24px; margin:10px 0}
+  .howto .loop small{font-size:12px; color:var(--dim)}
+  .howto b{color:var(--ink)}
+  .footer{text-align:center}
+  .linkbtn{background:none; border:none; color:var(--dim); font-size:12.5px; text-decoration:underline; cursor:pointer; padding:6px}
+  #fx{position:fixed; inset:0; pointer-events:none; z-index:50}
+  @media (prefers-reduced-motion: reduce){
+    .winner-emoji{animation:none}
+    .choice.bad{animation:none}
+  }
+  @media (min-width:520px){ body{justify-content:center} }
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="wrap">
+  <header>
+    <h1>Beat the Winner<span class="sub">RPS reflex trainer</span></h1>
+    <button class="iconbtn" id="muteBtn" aria-label="toggle sound">🔊</button>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="v" id="streak">0</div><div class="k">Streak</div></div>
+    <div class="stat"><div class="v" id="best">0</div><div class="k">Best</div></div>
+    <div class="stat"><div class="v" id="acc">–</div><div class="k">Accuracy</div></div>
+    <div class="stat"><div class="v" id="speed">–</div><div class="k">Avg ⚡</div></div>
+  </div>
+
+  <div class="card" id="scenario">
+    <div class="roundnum" id="roundnum">Round 1</div>
+    <div class="recap" id="recap"></div>
+    <div class="winner-emoji" id="winnerEmoji">✊</div>
+    <div class="winner-label" id="winnerLabel">No winner yet</div>
+    <div class="prompt" id="prompt">Rule #1: always open with Rock</div>
+  </div>
+
+  <div class="choices">
+    <button class="choice" data-throw="rock">✊<span>ROCK</span></button>
+    <button class="choice" data-throw="paper">✋<span>PAPER</span></button>
+    <button class="choice" data-throw="scissors">✌️<span>SCISSORS</span></button>
+  </div>
+
+  <div class="banner" id="banner">Tap the throw that beats the last winner.<small>Keyboard: R / P / S</small></div>
+  <div class="milestone" id="milestone"></div>
+
+  <div class="howto">
+    <h2>The fast mental method</h2>
+    Remember one loop. Each throw is beaten by the next one:
+    <div class="loop">✊ <small>→</small> ✋ <small>→</small> ✌️ <small>→</small> ✊</div>
+    <b>See what won, step one forward.</b> Rock won? Paper. Paper won? Scissors. Scissors won? Rock.
+    <br><br>
+    <b>Rule #1: always open with Rock.</b>
+    <br><br>
+    This trains the reflex from Mark Rober's tip: play whatever beats the previous winning throw. It's a heuristic that exploits how people actually behave, not a guarantee. The opponent here throws at random, so treat your streak and speed as the real score.
+  </div>
+
+  <div class="footer"><button class="linkbtn" id="resetBtn">reset all stats</button></div>
+</div>
+
+<script>
+// === LOGIC START ===
+const THROWS = ['rock','paper','scissors'];
+const EMOJI = { rock:'✊', paper:'✋', scissors:'✌️' };
+const NAME = { rock:'Rock', paper:'Paper', scissors:'Scissors' };
+// The throw that BEATS x: one step forward in the loop rock -> paper -> scissors -> rock
+const BEATER = { rock:'paper', paper:'scissors', scissors:'rock' };
+// Does a beat b?
+function beats(a,b){ return BEATER[b] === a; }
+// The correct drill answer given the last winner (null = no decisive round yet)
+function correctAnswer(lastWinner){ return lastWinner === null ? 'rock' : BEATER[lastWinner]; }
+// Round outcome vs opponent: 'win' | 'lose' | 'tie' from the user's perspective
+function roundOutcome(pick, opp){
+  if (pick === opp) return 'tie';
+  return beats(pick, opp) ? 'win' : 'lose';
+}
+// Next "winner to beat": only a decisive round replaces it
+function nextTarget(lastWinner, pick, opp){
+  if (pick === opp) return lastWinner;
+  return beats(pick, opp) ? pick : opp;
+}
+// Drill grade: 'good' | 'tie' | 'bad'
+function grade(pick, lastWinner){
+  const want = correctAnswer(lastWinner);
+  if (pick === want) return 'good';
+  if (lastWinner !== null && pick === lastWinner) return 'tie';
+  return 'bad';
+}
+// === LOGIC END ===
+
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('rps.'+k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('rps.'+k, JSON.stringify(v)); }catch(e){} }
+};
+
+const state = {
+  target: null,          // last decisive winner to beat
+  round: 1,
+  streak: 0,
+  best: store.get('best', 0),
+  correct: 0,
+  answers: 0,
+  times: [],             // reaction times, this session
+  shownAt: 0,
+  locked: false,
+  lastTied: false,       // previous round tied, target unchanged
+  recap: '',
+  muted: store.get('muted', false),
+};
+
+// ---- sound ----
+let actx = null;
+function blip(freq, dur, type, vol){
+  if (state.muted) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type || 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol || .12, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001, actx.currentTime + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + dur);
+  }catch(e){}
+}
+const sndGood = () => { blip(660,.12,'sine'); setTimeout(()=>blip(880,.16,'sine'),70); };
+const sndBad  = () => blip(160,.25,'sawtooth',.08);
+const sndTie  = () => blip(440,.12,'triangle',.09);
+
+// ---- confetti ----
+const fx = $('fx'), fxc = fx.getContext('2d');
+let parts = [], fxRunning = false;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function sizeFx(){ fx.width = innerWidth * devicePixelRatio; fx.height = innerHeight * devicePixelRatio; }
+addEventListener('resize', sizeFx); sizeFx();
+function confetti(){
+  if (reducedMotion) return;
+  const colors = ['#2dd4a7','#7c9bff','#ffb84d','#ff5d6c','#eef1ff'];
+  for (let i=0;i<70;i++){
+    parts.push({ x: innerWidth/2*devicePixelRatio, y: innerHeight*0.42*devicePixelRatio,
+      vx:(Math.random()-.5)*16*devicePixelRatio, vy:(Math.random()-.85)*14*devicePixelRatio,
+      r:(Math.random()*4+2)*devicePixelRatio, c:colors[i%colors.length], life:1 });
+  }
+  if (!fxRunning){ fxRunning = true; requestAnimationFrame(fxTick); }
+}
+function fxTick(){
+  fxc.clearRect(0,0,fx.width,fx.height);
+  parts = parts.filter(p => p.life > 0);
+  for (const p of parts){
+    p.vy += .45*devicePixelRatio; p.x += p.vx; p.y += p.vy; p.life -= .016;
+    fxc.globalAlpha = Math.max(p.life,0); fxc.fillStyle = p.c;
+    fxc.beginPath(); fxc.arc(p.x,p.y,p.r,0,7); fxc.fill();
+  }
+  if (parts.length){ requestAnimationFrame(fxTick); } else { fxRunning = false; fxc.clearRect(0,0,fx.width,fx.height); }
+}
+
+// ---- render ----
+function renderStats(){
+  $('streak').textContent = state.streak;
+  $('best').textContent = state.best;
+  $('acc').textContent = state.answers ? Math.round(100*state.correct/state.answers)+'%' : '–';
+  $('speed').textContent = state.times.length
+    ? (state.times.reduce((a,b)=>a+b,0)/state.times.length/1000).toFixed(1)+'s' : '–';
+}
+function renderScenario(){
+  $('roundnum').textContent = 'Round ' + state.round;
+  $('recap').innerHTML = state.recap;
+  if (state.target === null){
+    $('winnerEmoji').textContent = '✊';
+    $('winnerLabel').textContent = state.lastTied ? 'Still no winner' : 'No winner yet';
+    $('prompt').textContent = 'Rule #1: always open with Rock';
+  } else {
+    $('winnerEmoji').textContent = EMOJI[state.target];
+    $('winnerLabel').textContent = NAME[state.target] + (state.lastTied ? ' is still the one to beat' : ' won the last round');
+    $('prompt').textContent = 'Play the throw that beats ' + NAME[state.target];
+  }
+  // retrigger pop animation
+  const el = $('winnerEmoji'); el.style.animation='none'; void el.offsetWidth; el.style.animation='';
+  renderStats();
+}
+function setBanner(cls, html){
+  const b = $('banner'); b.className = 'banner' + (cls ? ' '+cls : ''); b.innerHTML = html;
+}
+
+// ---- game flow ----
+function pick(t){
+  if (state.locked) return;
+  state.locked = true;
+  const rt = performance.now() - state.shownAt;
+  state.times.push(rt);
+  state.answers++;
+
+  const g = grade(t, state.target);
+  const want = correctAnswer(state.target);
+  const opp = THROWS[Math.floor(Math.random()*3)];
+  const out = roundOutcome(t, opp);
+  const prevTarget = state.target;
+
+  const btn = document.querySelector('.choice[data-throw="'+t+'"]');
+  btn.classList.add(g);
+  document.querySelectorAll('.choice').forEach(b => b.disabled = true);
+
+  let head, sub;
+  if (g === 'good'){
+    state.streak++; state.correct++;
+    head = '✅ ' + NAME[t] + ' beats ' + (prevTarget === null ? 'nothing — perfect opening' : NAME[prevTarget]) + '!';
+    sndGood();
+  } else if (g === 'tie'){
+    state.streak = 0;
+    head = '🟰 ' + NAME[t] + ' only ties ' + NAME[prevTarget];
+    sub = 'You need the throw that beats it: ' + EMOJI[want] + ' ' + NAME[want];
+    sndTie();
+  } else {
+    state.streak = 0;
+    head = prevTarget === null
+      ? "❌ Rule #1: always open with Rock"
+      : '❌ ' + NAME[t] + ' loses to ' + NAME[prevTarget];
+    sub = 'Answer: ' + EMOJI[want] + ' ' + NAME[want];
+    sndBad();
+  }
+
+  const outMsg = out === 'tie'
+    ? 'Opponent also threw ' + EMOJI[opp] + ' — round tied, same target stays.'
+    : out === 'win'
+      ? 'Opponent threw ' + EMOJI[opp] + ' — you won the round!'
+      : 'Opponent threw ' + EMOJI[opp] + ' — they took that one.';
+  setBanner(g, head + '<small>' + (sub ? sub + '<br>' : '') + outMsg + ' ⚡ ' + (rt/1000).toFixed(1) + 's</small>');
+
+  // milestone
+  const m = $('milestone');
+  if (g === 'good' && state.streak > 0 && state.streak % 5 === 0){
+    const label = state.streak >= 25 ? 'Machine 🤖' : state.streak >= 20 ? 'Unstoppable 🚀' : state.streak >= 15 ? 'Locked in 🔒' : state.streak >= 10 ? 'On fire 🔥🔥' : 'Warming up 🔥';
+    m.textContent = '🔥 ' + state.streak + ' in a row — ' + label;
+    confetti();
+  } else if (state.streak > state.best){
+    // handled below when best updates
+  }
+  if (state.streak > state.best){
+    state.best = state.streak; store.set('best', state.best);
+    if (state.streak > 1 && state.streak % 5 !== 0) m.textContent = '⭐ New personal best!';
+  }
+  if (g !== 'good' || state.streak % 5 !== 0){
+    if (!(state.streak > 1 && state.streak === state.best && g === 'good')) m.textContent = '';
+  }
+
+  // prepare next round
+  const nt = nextTarget(state.target, t, opp);
+  state.recap = 'You ' + EMOJI[t] + ' · Opp ' + EMOJI[opp] + ' — ' +
+    (out === 'tie' ? '<b>tied</b>' : out === 'win' ? '<b>you won</b>' : '<b>you lost</b>');
+  state.lastTied = (out === 'tie');
+  state.target = nt;
+  state.round++;
+
+  setTimeout(() => {
+    btn.classList.remove(g);
+    document.querySelectorAll('.choice').forEach(b => b.disabled = false);
+    renderScenario();
+    setBanner('', 'Tap the throw that beats the last winner.<small>Keyboard: R / P / S</small>');
+    state.shownAt = performance.now();
+    state.locked = false;
+  }, 1000);
+  renderStats();
+}
+
+document.querySelectorAll('.choice').forEach(b =>
+  b.addEventListener('click', () => pick(b.dataset.throw)));
+document.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k === 'r' || k === '1') pick('rock');
+  else if (k === 'p' || k === '2') pick('paper');
+  else if (k === 's' || k === '3') pick('scissors');
+});
+$('muteBtn').addEventListener('click', () => {
+  state.muted = !state.muted; store.set('muted', state.muted);
+  $('muteBtn').textContent = state.muted ? '🔇' : '🔊';
+});
+$('resetBtn').addEventListener('click', () => {
+  state.streak = 0; state.best = 0; state.correct = 0; state.answers = 0; state.times = [];
+  store.set('best', 0); renderStats();
+});
+$('muteBtn').textContent = state.muted ? '🔇' : '🔊';
+renderScenario();
+state.shownAt = performance.now();
+</script>
+</body>
+</html>
